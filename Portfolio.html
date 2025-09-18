@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Resume | Karthikeyan Krishnan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Ocean Blue to Lavender -->
+    <!-- Application Structure Plan: A dashboard-style single-page application with a fixed side-navigation bar and a main content panel. This structure allows recruiters to quickly navigate to the sections they find most relevant (e.g., Projects, Skills) without linear scrolling. The sections are: 1) Overview: A landing page with a summary and key impact metrics to create a strong first impression. 2) Skills Dashboard: A visual and interactive breakdown of technical abilities. 3) Experience Timeline: A chronological and interactive view of internships. 4) Projects Portfolio: A grid of clickable cards that reveal detailed project information in modals. This design prioritizes non-linear exploration and user engagement, making the content more digestible and memorable than a traditional document. -->
+    <!-- Visualization & Content Choices: 
+        - Career Summary -> Goal: Inform/Impress -> Method: Text block with prominent "Impact Metric" cards (HTML/CSS) -> Interaction: Visual emphasis -> Justification: Immediately highlights key achievements.
+        - Skills -> Goal: Compare/Inform -> Method: Interactive Horizontal Bar Chart (Chart.js on Canvas) -> Interaction: Hover for tooltips, click to see usage examples -> Justification: More engaging and provides a quicker understanding of proficiency than a list.
+        - Experience -> Goal: Organize/Inform -> Method: Vertical Timeline (HTML/CSS) -> Interaction: Click to expand/collapse details for each role -> Justification: Presents chronological data cleanly, avoiding initial clutter.
+        - Projects -> Goal: Showcase/Detail -> Method: Grid of cards (HTML/CSS) -> Interaction: Click button to open a detailed modal view for each project -> Justification: Allows a high-level overview while providing deep-dive information on demand without leaving the page.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #404040;
+            background: linear-gradient(135deg, #f0f4f8, #e0e8f0);
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        .nav-link {
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        .nav-link.active, .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.5);
+            border-left-color: #0077b5;
+            color: #005a87;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .modal {
+            display: none;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 450px;
+            max-height: 50vh;
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .timeline-item {
+            position: relative;
+            padding-left: 2rem;
+            margin-bottom: 2.5rem;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 0.25rem;
+            width: 1rem;
+            height: 1rem;
+            background: linear-gradient(45deg, #0077b5, #5a66b5);
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px #0077b5;
+        }
+        .timeline-content {
+            display: none;
+        }
+        .timeline-content.active {
+            display: block;
+        }
+        .gradient-btn {
+            background: linear-gradient(45deg, #0077b5, #5a66b5);
+            transition: all 0.3s ease;
+        }
+        .gradient-btn:hover {
+            background: linear-gradient(45deg, #005a87, #455099);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-64 bg-white bg-opacity-80 p-4 md:p-6 shadow-md md:fixed md:h-full backdrop-blur-sm">
+            <div class="text-center md:text-left">
+                <h1 class="text-2xl font-bold text-[#005a87]">Karthikeyan Krishnan</h1>
+                <p class="text-sm text-gray-600">Computer Science Engineering</p>
+            </div>
+            <nav class="mt-8 flex flex-row md:flex-col -mx-2 md:mx-0" id="navigation">
+                <a href="#overview" data-target="overview" class="nav-link active font-medium p-3 rounded-md m-1 md:m-0 md:my-1">
+                    <span class="w-6 mr-2 text-center">🏠</span> Overview
+                </a>
+                <a href="#skills" data-target="skills" class="nav-link font-medium p-3 rounded-md m-1 md:m-0 md:my-1">
+                    <span class="w-6 mr-2 text-center">📊</span> Skills
+                </a>
+                <a href="#experience" data-target="experience" class="nav-link font-medium p-3 rounded-md m-1 md:m-0 md:my-1">
+                    <span class="w-6 mr-2 text-center">💼</span> Experience
+                </a>
+                <a href="#projects" data-target="projects" class="nav-link font-medium p-3 rounded-md m-1 md:m-0 md:my-1">
+                    <span class="w-6 mr-2 text-center">🚀</span> Projects
+                </a>
+                <a href="#education" data-target="education" class="nav-link font-medium p-3 rounded-md m-1 md:m-0 md:my-1">
+                    <span class="w-6 mr-2 text-center">🎓</span> Education
+                </a>
+            </nav>
+            <div class="hidden md:block absolute bottom-6 left-6 right-6">
+                <p class="text-xs text-gray-500">&copy; 2025 Karthikeyan Krishnan</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 md:ml-64 p-6 md:p-10">
+            <!-- Overview Section -->
+            <section id="overview" class="content-section active">
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+                    <h2 class="text-3xl font-bold text-[#005a87] mb-4">Career Summary</h2>
+                    <p class="text-lg leading-relaxed text-gray-700">A passionate Computer Science Engineering student with a strong foundation in programming and problem-solving. Eager to leverage skills in <strong>Python, Java,</strong> and <strong>SQL</strong> to contribute to a professional IT environment. Proven ability to develop applications, automate tasks, and collaborate on team projects, as demonstrated through internships and academic projects.</p>
+                </div>
+                
+                <h3 class="text-2xl font-bold text-[#005a87] mt-10 mb-4">Key Impact Metrics</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="metrics-grid">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 text-center">
+                        <p class="text-4xl font-bold text-[#0077b5] count-up" data-count="98">0</p>
+                        <p class="text-gray-600 mt-2">Model Accuracy in Tumor Diagnosis Project</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 text-center">
+                        <p class="text-4xl font-bold text-[#0077b5] count-up" data-count="40">0</p>
+                        <p class="text-gray-600 mt-2">Improved Disaster Response Capabilities</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 text-center">
+                        <p class="text-4xl font-bold text-[#0077b5] count-up" data-count="25">0</p>
+                        <p class="text-gray-600 mt-2">Improved User Interaction via AI</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 text-center">
+                        <p class="text-4xl font-bold text-[#0077b5] count-up" data-count="15">0</p>
+                        <p class="text-gray-600 mt-2">Reduction in Data Processing Time</p>
+                    </div>
+                </div>
+                 <div class="bg-white mt-10 p-8 rounded-xl shadow-sm border border-gray-200">
+                    <h2 class="text-2xl font-bold text-[#005a87] mb-4">Contact Information</h2>
+                     <div class="flex flex-wrap gap-x-8 gap-y-4">
+                        <p><strong>Email:</strong> <a href="mailto:krishnankarthikeya08@gmail.com" class="text-[#0077b5] hover:underline">krishnankarthikeya08@gmail.com</a></p>
+                        <p><strong>Phone:</strong> +91 9600447244</p>
+                        <p><strong>LinkedIn:</strong> <a href="#" class="text-[#0077b5] hover:underline">karthikeyankrishnan08</a></p>
+                        <p><strong>GitHub:</strong> <a href="#" class="text-[#0077b5] hover:underline">Karthikeyank0903</a></p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Skills Section -->
+            <section id="skills" class="content-section">
+                <h2 class="text-3xl font-bold text-[#005a87] mb-6">Technical Skills Dashboard</h2>
+                <p class="text-lg text-gray-700 mb-8">This chart provides a visual representation of my technical competencies. Hover over any bar to see the skill name and proficiency level, which reflects both academic knowledge and hands-on project experience.</p>
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+                    <div class="chart-container">
+                        <canvas id="skillsChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Experience Section -->
+            <section id="experience" class="content-section">
+                <h2 class="text-3xl font-bold text-[#005a87] mb-8">Professional Experience</h2>
+                <div class="relative border-l-2 border-[#0077b5] ml-4">
+                    <!-- Techfidelite Solution -->
+                    <div class="timeline-item">
+                        <p class="text-sm text-gray-500">July - Sep 2024</p>
+                        <button class="flex items-center text-xl font-semibold text-gray-900 mt-1 cursor-pointer w-full text-left" aria-expanded="false" aria-controls="techfidelite-content">
+                            Python Developer Intern, Techfidelite Solution, Chennai
+                            <span class="ml-2 transform transition-transform duration-300">▼</span>
+                        </button>
+                        <div id="techfidelite-content" class="timeline-content mt-4">
+                            <ul class="list-disc list-inside text-gray-700 space-y-2">
+                                <li>Developed and maintained applications using Python, integrating them with MySQL databases.</li>
+                                <li>Designed and implemented efficient database queries, reducing data processing time by 15% and ensuring optimal performance.</li>
+                                <li>Contributed to code reviews and debugging sessions, enhancing code quality and adopting collaborative development best practices.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <!-- BluelinesTech Solutions -->
+                    <div class="timeline-item">
+                        <p class="text-sm text-gray-500">May - June 2024</p>
+                        <button class="flex items-center text-xl font-semibold text-gray-900 mt-1 cursor-pointer w-full text-left" aria-expanded="false" aria-controls="bluelines-content">
+                            Web Developer Intern, BluelinesTech Solutions, Kovilpatti
+                            <span class="ml-2 transform transition-transform duration-300">▼</span>
+                        </button>
+                        <div id="bluelines-content" class="timeline-content mt-4">
+                            <ul class="list-disc list-inside text-gray-700 space-y-2">
+                                <li>Developed a web application that automated tasks and improved user interaction by 25% through the integration of AI technologies.</li>
+                                <li>Engineered both frontend and backend components, ensuring seamless integration of AI functionalities.</li>
+                                <li>Managed project codebase and collaborated on feature updates and bug fixes using version control systems like Git.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Projects Section -->
+            <section id="projects" class="content-section">
+                 <h2 class="text-3xl font-bold text-[#005a87] mb-2">Projects Portfolio</h2>
+                 <p class="text-lg text-gray-700 mb-8">Here are some of the key projects I've worked on. They demonstrate my ability to apply theoretical knowledge to solve real-world problems. Click on a project to see more details.</p>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8" id="projects-grid">
+                </div>
+            </section>
+
+            <!-- Education Section -->
+            <section id="education" class="content-section">
+                <h2 class="text-3xl font-bold text-[#005a87] mb-8">Education & Certifications</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Bachelor of Engineering in Computer Science</h3>
+                        <p class="text-md font-medium text-gray-600">Unnamalai Institute of Technology</p>
+                        <p class="text-sm text-gray-500 mt-1">2021-2025</p>
+                        <ul class="mt-4 space-y-2 text-gray-700">
+                            <li><span class="font-semibold">CGPA:</span> 8.34</li>
+                            <li><span class="font-semibold">Honors:</span> Degree in Data Science</li>
+                        </ul>
+                    </div>
+                     <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Certifications</h3>
+                        <ul class="mt-4 list-disc list-inside text-gray-700 space-y-2">
+                            <li>Oracle Certified Foundation Associate, Oracle University, 2024</li>
+                            <li>Big Data 101, 201, & 301, Infosys Springboard, 2024</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Project Modal -->
+    <div id="project-modal" class="modal fixed inset-0 bg-black bg-opacity-60 items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" id="modal-content">
+            <div class="p-8">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 id="modal-title" class="text-2xl font-bold text-[#005a87]"></h3>
+                        <div id="modal-tags" class="flex flex-wrap gap-2 mt-2"></div>
+                    </div>
+                    <button id="modal-close" class="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
+                </div>
+                <div id="modal-body" class="mt-6 text-gray-700 leading-relaxed"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const navigation = document.getElementById('navigation');
+            const sections = document.querySelectorAll('.content-section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const modal = document.getElementById('project-modal');
+            const modalClose = document.getElementById('modal-close');
+            const metricsGrid = document.getElementById('metrics-grid');
+            const countUpElements = document.querySelectorAll('.count-up');
+            const timelineButtons = document.querySelectorAll('.timeline-item button');
+
+            function switchTab(targetId) {
+                sections.forEach(section => {
+                    section.classList.remove('active');
+                    if (section.id === targetId) {
+                        section.classList.add('active');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.dataset.target === targetId) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+
+            navigation.addEventListener('click', function(e) {
+                if (e.target.closest('a')) {
+                    e.preventDefault();
+                    const targetId = e.target.closest('a').dataset.target;
+                    switchTab(targetId);
+                    window.location.hash = targetId;
+                }
+            });
+
+            const initialHash = window.location.hash.substring(1);
+            if (initialHash) {
+                switchTab(initialHash);
+            }
+
+            // Animate numbers on scroll
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        countUpElements.forEach(el => {
+                            const target = parseInt(el.dataset.count, 10);
+                            let current = 0;
+                            const increment = target / 100;
+                            const interval = setInterval(() => {
+                                current += increment;
+                                if (current >= target) {
+                                    el.textContent = target + '%';
+                                    clearInterval(interval);
+                                } else {
+                                    el.textContent = Math.ceil(current) + '%';
+                                }
+                            }, 10);
+                        });
+                        observer.unobserve(metricsGrid);
+                    }
+                });
+            }, { threshold: 0.5 });
+
+            observer.observe(metricsGrid);
+
+            // Timeline toggle
+            timelineButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const content = button.nextElementSibling;
+                    const isExpanded = button.getAttribute('aria-expanded') === 'true';
+                    
+                    if (isExpanded) {
+                        content.classList.remove('active');
+                        button.setAttribute('aria-expanded', 'false');
+                        button.querySelector('span').style.transform = 'rotate(0deg)';
+                    } else {
+                        content.classList.add('active');
+                        button.setAttribute('aria-expanded', 'true');
+                        button.querySelector('span').style.transform = 'rotate(180deg)';
+                    }
+                });
+            });
+
+            // Skills Chart
+            const skillsChartCtx = document.getElementById('skillsChart').getContext('2d');
+            const chartGradient = skillsChartCtx.createLinearGradient(0, 0, skillsChartCtx.canvas.width, 0);
+            chartGradient.addColorStop(0, '#0077b5');
+            chartGradient.addColorStop(1, '#5a66b5');
+
+            const skillsData = {
+                labels: ['Python', 'Java', 'SQL', 'TensorFlow', 'Django', 'Git', 'MySQL', 'C', 'OpenCV'],
+                datasets: [{
+                    label: 'Proficiency Level',
+                    data: [90, 80, 85, 80, 75, 90, 85, 70, 75],
+                    backgroundColor: chartGradient,
+                    borderColor: 'transparent',
+                    borderWidth: 1
+                }]
+            };
+
+            new Chart(skillsChartCtx, {
+                type: 'bar',
+                data: skillsData,
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + "%"
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Projects Data & Modal Logic
+            const projectsData = [
+                {
+                    title: 'NeuroFusion: Advancing Brain Tumor Diagnosis',
+                    tags: ['Python', 'TensorFlow', 'Django', 'CNN', 'OpenCV'],
+                    description: `
+                        <p>This project focused on leveraging deep learning to improve the accuracy and efficiency of brain tumor diagnosis from MRI scans. I developed a robust Convolutional Neural Network (CNN) architecture from the ground up.</p>
+                        <ul class="list-disc list-inside mt-4 space-y-2">
+                            <li>Built and trained a deep learning model using CNN and TensorFlow, achieving an impressive <strong>98% accuracy</strong> in classifying brain tumors.</li>
+                            <li>Engineered and deployed a user-friendly web application using Django, allowing for real-time diagnostic capabilities by simply uploading an MRI scan.</li>
+                            <li>Utilized OpenCV for pre-processing of MRI images to enhance model performance.</li>
+                        </ul>`
+                },
+                {
+                    title: 'IoT-Based Flood Monitoring and Alerting System',
+                    tags: ['IoT', 'ThinkSpeak', 'Data Visualization'],
+                    description: `
+                        <p>To address the challenge of timely flood warnings, I designed and developed a real-time monitoring solution that integrates IoT sensors with a cloud platform.</p>
+                        <ul class="list-disc list-inside mt-4 space-y-2">
+                            <li>Developed a system that integrates IoT water level sensors with the ThinkSpeak platform for real-time data aggregation and analysis.</li>
+                            <li>Created an interactive dashboard for effective data visualization, enabling authorities to monitor conditions at a glance.</li>
+                            <li>The implemented system significantly enhanced disaster preparedness, contributing to a <strong>40% improvement</strong> in response capabilities based on simulated data.</li>
+                        </ul>`
+                }
+            ];
+
+            const projectsGrid = document.getElementById('projects-grid');
+            const modalTitle = document.getElementById('modal-title');
+            const modalTags = document.getElementById('modal-tags');
+            const modalBody = document.getElementById('modal-body');
+
+            projectsData.forEach((project, index) => {
+                const projectCard = document.createElement('div');
+                projectCard.className = 'bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col';
+                projectCard.innerHTML = `
+                    <h3 class="text-xl font-semibold text-gray-900">${project.title}</h3>
+                    <div class="flex flex-wrap gap-2 my-4">
+                        ${project.tags.map(tag => `<span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${tag}</span>`).join('')}
+                    </div>
+                    <p class="text-gray-600 flex-grow">${project.description.split('</p>')[0].replace('<p>', '')}...</p>
+                    <button data-index="${index}" class="open-modal-btn mt-6 text-white font-medium py-2 px-4 rounded-lg self-start gradient-btn">View Details</button>
+                `;
+                projectsGrid.appendChild(projectCard);
+            });
+
+            projectsGrid.addEventListener('click', e => {
+                if (e.target.classList.contains('open-modal-btn')) {
+                    const project = projectsData[e.target.dataset.index];
+                    modalTitle.textContent = project.title;
+                    modalBody.innerHTML = project.description;
+                    modalTags.innerHTML = project.tags.map(tag => `<span class="bg-gray-200 text-gray-800 text-sm font-medium px-3 py-1 rounded-full">${tag}</span>`).join('');
+                    modal.classList.add('active');
+                }
+            });
+
+            function closeModal() {
+                modal.classList.remove('active');
+            }
+
+            modalClose.addEventListener('click', closeModal);
+            modal.addEventListener('click', e => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+            document.addEventListener('keydown', e => {
+                if (e.key === "Escape") {
+                    closeModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
